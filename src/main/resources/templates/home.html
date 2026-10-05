@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang chủ</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="box">
+    <h2>Xin chào, <span sec:authentication="name">user</span></h2>
+
+    <p sec:authorize="hasRole('ADMIN')">Vai trò: Quản trị hệ thống</p>
+    <p sec:authorize="hasRole('HEAD')">Vai trò: Trưởng khoa</p>
+    <p sec:authorize="hasRole('LECTURER')">Vai trò: Giảng viên</p>
+    <p sec:authorize="hasRole('STUDENT')">Vai trò: Sinh viên</p>
+
+    <ul>
+        <li><a th:href="@{/account/profile}">Thông tin tài khoản của tôi</a></li>
+        <li><a th:href="@{/account/password}">Đổi mật khẩu</a></li>
+        <li><a th:href="@{/topics}">Danh sách đề tài đã công bố</a></li>
+        <li><a th:href="@{/announcements}">Thông báo chính thức</a></li>
+
+        <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/users}">Quản lý tài khoản</a></li>
+        <li sec:authorize="hasRole('ADMIN')"><a th:href="@{/admin/announcements}">Quản lý thông báo</a></li>
+
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/periods}">Quản lý đợt đăng ký</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/topics}">Duyệt và công bố đề tài</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/registrations}">Duyệt đăng ký của sinh viên</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/reviewers}">Phân công giảng viên phản biện</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/councils}">Quản lý hội đồng</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/results}">Công bố kết quả hội đồng</a></li>
+        <li sec:authorize="hasRole('HEAD')"><a th:href="@{/head/announcements}">Quản lý thông báo</a></li>
+
+        <li sec:authorize="hasRole('LECTURER')"><a th:href="@{/lecturer/topics}">Đề tài của tôi / Đăng ký đề tài</a></li>
+        <li sec:authorize="hasRole('LECTURER')"><a th:href="@{/lecturer/reports}">Báo cáo của nhóm được hướng dẫn</a></li>
+        <li sec:authorize="hasRole('LECTURER')"><a th:href="@{/lecturer/reviews}">Nhiệm vụ phản biện</a></li>
+        <li sec:authorize="hasRole('LECTURER')"><a th:href="@{/lecturer/council-work}">Chấm điểm hội đồng</a></li>
+
+        <li sec:authorize="hasRole('STUDENT')"><a th:href="@{/student/groups}">Lập nhóm / tham gia nhóm</a></li>
+        <li sec:authorize="hasRole('STUDENT')"><a th:href="@{/student/registrations}">Đăng ký đề tài / xem trạng thái</a></li>
+        <li sec:authorize="hasRole('STUDENT')"><a th:href="@{/student/reports}">Nộp / tải báo cáo</a></li>
+        <li sec:authorize="hasRole('STUDENT')"><a th:href="@{/student/results}">Xem kết quả</a></li>
+    </ul>
+
+    <form th:action="@{/logout}" method="post">
+        <button type="submit">Đăng xuất</button>
+    </form>
+</div>
+</body>
+</html>

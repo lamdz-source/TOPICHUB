@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách đề tài</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="box wide">
+    <h2>Danh sách đề tài đã công bố</h2>
+    <a th:href="@{/}">&larr; Về trang chủ</a>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>Tên đề tài</th><th>Bộ môn</th><th>Người tạo</th><th>Ngày tạo</th></tr>
+        </thead>
+        <tbody>
+            <!-- th:each lặp qua danh sách "topics" mà Controller đã đưa vào Model -->
+            <tr th:each="t, stat : ${topics}">
+                <td th:text="${stat.count}">1</td>
+                <td th:text="${t.title}">Tên đề tài</td>
+                <td th:text="${t.department.name}">Bộ môn</td>
+                <td th:text="${t.createdBy.fullName}">GV</td>
+                <td th:text="${#temporals.format(t.createdAt, 'dd/MM/yyyy')}">01/01/2026</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(topics)}">
+                <td colspan="5">Chưa có đề tài nào được công bố.</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

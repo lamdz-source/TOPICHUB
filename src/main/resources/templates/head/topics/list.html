@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Duyệt đề tài</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="box xwide">
+    <h2>Duyệt và công bố đề tài</h2>
+    <a th:href="@{/}">&larr; Về trang chủ</a>
+
+    <form class="inline" th:action="@{/head/topics/publish-all}" method="post">
+        <button type="submit">Công bố tất cả đề tài đã duyệt</button>
+    </form>
+
+    <p class="ok" th:if="${message}" th:text="${message}"></p>
+    <p class="error" th:if="${error}" th:text="${error}"></p>
+
+    <table>
+        <thead>
+            <tr><th>#</th><th>Tên đề tài</th><th>Bộ môn</th><th>Đợt</th><th>GVHD</th>
+                <th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody>
+            <tr th:each="row, stat : ${rows}">
+                <td th:text="${stat.count}">1</td>
+                <td>
+                    <strong th:text="${row.topic.title}">Tên đề tài</strong>
+                    <div class="desc" th:text="${row.topic.description}">Mô tả</div>
+                    <div class="field-error" th:if="${row.topic.rejectReason != null}"
+                         th:text="${'Lý do từ chối: ' + row.topic.rejectReason}"></div>
+                </td>
+                <td th:text="${row.topic.department.name}">Bộ môn</td>
+                <td th:text="${row.topic.registrationPeriod.name}">Đợt</td>
+                <td th:text="${row.supervisors}">GVHD</td>
+                <td><span class="badge" th:classappend="${'st-' + row.topic.status.name()}" th:text="${row.topic.status.label}">Chờ duyệt</span></td>
+                <td class="actions">
+                    <!-- Chờ duyệt: Duyệt hoặc Từ chối (từ chối phải nhập lý do) -->
+                    <form th:if="${row.topic.status.name() == 'PENDING'}"
+                          th:action="@{/head/topics/{id}/approve(id=${row.topic.id})}" method="post">
+                        <button type="submit">Duyệt</button>
+                    </form>
+                    <form th:if="${row.topic.status.name() == 'PENDING'}"
+                          th:action="@{/head/topics/{id}/reject(id=${row.topic.id})}" method="post">
+                        <input type="text" name="reason" placeholder="Lý do từ chối" class="reason" required>
+                        <button type="submit">Từ chối</button>
+                    </form>
+                    <!-- Đã duyệt: Công bố -->
+                    <form th:if="${row.topic.status.name() == 'APPROVED'}"
+                          th:action="@{/head/topics/{id}/publish(id=${row.topic.id})}" method="post">
+                        <button type="submit">Công bố</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7">Chưa có đề tài nào.</td></tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

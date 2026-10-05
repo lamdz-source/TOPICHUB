@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng nhập</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="box">
+    <h2>Hệ thống quản lý đề tài</h2>
+    <p class="error" th:if="${param.error}">Sai tên đăng nhập hoặc mật khẩu.</p>
+    <p class="ok" th:if="${param.logout}">Bạn đã đăng xuất.</p>
+
+    <!-- th:action tự gắn thêm mã CSRF chống giả mạo yêu cầu -->
+    <form th:action="@{/login}" method="post">
+        <label>Tên đăng nhập</label>
+        <input type="text" name="username" required autofocus>
+        <label>Mật khẩu</label>
+        <input type="password" name="password" required>
+        <button type="submit">Đăng nhập</button>
+    </form>
+</div>
+</body>
+</html>
