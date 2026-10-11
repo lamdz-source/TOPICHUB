@@ -169,6 +169,29 @@ public class RegistrationPeriodService {
         period.setStatus(PeriodStatus.OPEN);
     }
 
+    /** Mở lại đợt đã đóng khi lịch đăng ký SV chưa kết thúc và chưa có hội đồng gắn với đợt.
+     * Không sửa thời gian hay dữ liệu lịch sử; dùng lại các quy tắc kiểm tra đã có.
+     */
+    @Transactional
+    public void reopen(Long id) {
+        RegistrationPeriod period = getById(id);
+        if (period.getStatus() != PeriodStatus.CLOSED) {
+            throw new IllegalStateException("Chỉ mở lại được đợt đang đóng.");
+        }
+        Map<String, String> errors = checkRules(toForm(period));
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException("Không thể mở lại đợt: " + errors.values().iterator().next());
+        }
+        LocalDateTime currentTime = LocalDateTime.now(ZONE);
+        if (period.getStudentEnd() == null || !period.getStudentEnd().isAfter(currentTime)) {
+            throw new IllegalStateException("Giai đoạn đăng ký của sinh viên đã kết thúc; hãy tạo đợt mới.");
+        }
+        if (councilRepository.existsByRegistrationPeriod_Id(id)) {
+            throw new IllegalStateException("Đợt đã có hội đồng; không được mở lại để bảo vệ dữ liệu đánh giá.");
+        }
+        period.setStatus(PeriodStatus.OPEN);
+    }
+
     @Transactional
     public void close(Long id) {
         RegistrationPeriod period = getById(id);

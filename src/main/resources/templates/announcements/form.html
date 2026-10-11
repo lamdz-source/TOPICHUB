@@ -2,10 +2,12 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${pageTitle}">Sửa thông báo</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box formbox">
     <h2 th:text="${pageTitle}">Sửa thông báo</h2>
     <a th:href="@{${backUrl}}">← Quay lại quản lý thông báo</a>

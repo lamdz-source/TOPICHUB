@@ -2,15 +2,17 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Danh sách đề tài</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box wide">
     <h2>Danh sách đề tài đã công bố</h2>
     <a th:href="@{/}">&larr; Về trang chủ</a>
 
-    <table>
+    <div class="table-scroll" role="region" tabindex="0" aria-label="Bảng dữ liệu"><table>
         <thead>
             <tr><th>#</th><th>Tên đề tài</th><th>Bộ môn</th><th>Người tạo</th><th>Ngày tạo</th></tr>
         </thead>
@@ -27,7 +29,7 @@
                 <td colspan="5">Chưa có đề tài nào được công bố.</td>
             </tr>
         </tbody>
-    </table>
+    </table></div>
 </div>
 </body>
 </html>

@@ -2,14 +2,16 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Thông tin tài khoản</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box formbox">
     <h2>Thông tin tài khoản của tôi</h2>
     <a th:href="@{/}">← Về trang chủ</a>
-    <table>
+    <div class="table-scroll" role="region" tabindex="0" aria-label="Bảng dữ liệu"><table>
         <tbody>
         <tr><th>Tên đăng nhập</th><td th:text="${profile.username}"></td></tr>
         <tr><th>Họ và tên</th><td th:text="${profile.fullName != null ? profile.fullName : '—'}"></td></tr>
@@ -22,7 +24,7 @@
         <tr th:if="${profile.departmentName != null}"><th>Bộ môn</th><td th:text="${profile.departmentName}"></td></tr>
         <tr th:if="${profile.createdAt != null}"><th>Ngày tạo tài khoản</th><td th:text="${#temporals.format(profile.createdAt, 'dd/MM/yyyy HH:mm')}"></td></tr>
         </tbody>
-    </table>
+    </table></div>
     <p class="desc">Để đổi mật khẩu, vào <a th:href="@{/account/password}">Đổi mật khẩu</a>.</p>
 </div>
 </body>

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.edu.demo.topicmanagement.dto.HeadSupervisorForm;
 import vn.edu.demo.topicmanagement.service.TopicService;
 
 /**
@@ -28,6 +29,34 @@ public class HeadTopicController {
     public String list(Model model) {
         model.addAttribute("rows", topicService.getAllForHead());
         return "head/topics/list";
+    }
+
+    /** Chỉ Trưởng khoa được truy cập vì toàn bộ /head/** có ROLE_HEAD trong SecurityConfig. */
+    @GetMapping("/{id}/supervisors")
+    public String supervisorForm(@PathVariable Long id, Model model) {
+        var info = topicService.getHeadSupervisorInfo(id);
+        HeadSupervisorForm form = new HeadSupervisorForm();
+        form.setPrimarySupervisorId(info.primarySupervisorId());
+        form.setCoSupervisorId(info.coSupervisorId());
+        model.addAttribute("info", info);
+        model.addAttribute("id", id);
+        model.addAttribute("form", form);
+        model.addAttribute("lecturers", topicService.getActiveLecturerOptions());
+        return "head/topics/supervisors";
+    }
+
+    @PostMapping("/{id}/supervisors")
+    public String updateSupervisors(@PathVariable Long id,
+                                    @ModelAttribute HeadSupervisorForm form,
+                                    RedirectAttributes redirect) {
+        try {
+            topicService.updateSupervisorsByHead(id, form);
+            redirect.addFlashAttribute("message", "Đã cập nhật giảng viên hướng dẫn cho đề tài.");
+            return "redirect:/head/topics";
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+            return "redirect:/head/topics/" + id + "/supervisors";
+        }
     }
 
     @PostMapping("/{id}/approve")

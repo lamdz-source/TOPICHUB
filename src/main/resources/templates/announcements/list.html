@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><title>Thông báo</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
-<body><div class="box wide">
+<head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"><title>Thông báo</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div><div class="box wide">
     <h2>Thông báo chính thức</h2><a th:href="@{/}">&larr; Trang chủ</a>
     <article th:each="a : ${announcements}">
         <h3 th:text="${a.title}"></h3>

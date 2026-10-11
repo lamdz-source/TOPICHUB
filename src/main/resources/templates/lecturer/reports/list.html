@@ -2,14 +2,16 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Báo cáo đề tài được hướng dẫn</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box xwide">
     <h2>Báo cáo của nhóm được hướng dẫn</h2>
     <a th:href="@{/}">← Về trang chủ</a>
-    <table>
+    <div class="table-scroll" role="region" tabindex="0" aria-label="Bảng dữ liệu"><table>
         <thead><tr><th>Nhóm</th><th>Đề tài</th><th>Tệp báo cáo</th><th>Tải xuống</th></tr></thead>
         <tbody>
         <tr th:each="report : ${reports}">
@@ -23,7 +25,7 @@
         </tr>
         <tr th:if="${#lists.isEmpty(reports)}"><td colspan="4">Chưa có nhóm được hướng dẫn nào nộp báo cáo.</td></tr>
         </tbody>
-    </table>
+    </table></div>
 </div>
 </body>
 </html>

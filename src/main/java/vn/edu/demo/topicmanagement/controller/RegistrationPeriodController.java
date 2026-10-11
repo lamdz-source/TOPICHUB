@@ -93,6 +93,17 @@ public class RegistrationPeriodController {
         return changeStatus(id, redirect, true);
     }
 
+    @PostMapping("/{id}/reopen")
+    public String reopen(@PathVariable Long id, RedirectAttributes redirect) {
+        try {
+            periodService.reopen(id);
+            redirect.addFlashAttribute("message", "Đã mở lại đợt đăng ký.");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/periods";
+    }
+
     @PostMapping("/{id}/close")
     public String close(@PathVariable Long id, RedirectAttributes redirect) {
         return changeStatus(id, redirect, false);

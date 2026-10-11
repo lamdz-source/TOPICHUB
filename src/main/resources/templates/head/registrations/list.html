@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8"><title>Duyệt đăng ký đề tài</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
-<body><div class="box xwide">
+<head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1"><title>Duyệt đăng ký đề tài</title><link rel="stylesheet" th:href="@{/css/style.css}"></head>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div><div class="box xwide">
     <h2>Duyệt đăng ký đề tài của sinh viên</h2><a th:href="@{/}">&larr; Trang chủ</a>
     <p class="ok" th:if="${message}" th:text="${message}"></p><p class="error" th:if="${error}" th:text="${error}"></p>
-    <table><thead><tr><th>Nhóm</th><th>Đề tài</th><th>Ngày đăng ký</th><th>Thao tác</th></tr></thead>
+    <div class="table-scroll" role="region" tabindex="0" aria-label="Bảng dữ liệu"><table><thead><tr><th>Nhóm</th><th>Đề tài</th><th>Ngày đăng ký</th><th>Thao tác</th></tr></thead>
         <tbody><tr th:each="r : ${registrations}"><td>
                 <strong th:text="${r.groupName}"></strong>
                 <details><summary>Xem thành viên</summary>
@@ -26,5 +28,5 @@
                 <form th:action="@{/head/registrations/{id}/approve(id=${r.id})}" method="post"><button type="submit">Duyệt</button></form>
                 <form th:action="@{/head/registrations/{id}/reject(id=${r.id})}" method="post"><input class="reason" name="reason" maxlength="500" placeholder="Lý do từ chối" required><button type="submit">Từ chối</button></form>
             </td></tr><tr th:if="${#lists.isEmpty(registrations)}"><td colspan="4">Không có đăng ký nào đang chờ duyệt.</td></tr></tbody>
-    </table>
+    </table></div>
 </div></body></html>

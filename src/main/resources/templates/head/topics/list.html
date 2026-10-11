@@ -2,10 +2,12 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Duyệt đề tài</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box xwide">
     <h2>Duyệt và công bố đề tài</h2>
     <a th:href="@{/}">&larr; Về trang chủ</a>
@@ -17,7 +19,7 @@
     <p class="ok" th:if="${message}" th:text="${message}"></p>
     <p class="error" th:if="${error}" th:text="${error}"></p>
 
-    <table>
+    <div class="table-scroll" role="region" tabindex="0" aria-label="Bảng dữ liệu"><table>
         <thead>
             <tr><th>#</th><th>Tên đề tài</th><th>Bộ môn</th><th>Đợt</th><th>GVHD</th>
                 <th>Trạng thái</th><th>Thao tác</th></tr>
@@ -36,6 +38,9 @@
                 <td th:text="${row.supervisors}">GVHD</td>
                 <td><span class="badge" th:classappend="${'st-' + row.topic.status.name()}" th:text="${row.topic.status.label}">Chờ duyệt</span></td>
                 <td class="actions">
+                    <a th:if="${row.topic.status.name() != 'REJECTED'}"
+                       th:href="@{/head/topics/{id}/supervisors(id=${row.topic.id})}"
+                       class="supervisor-link">Phân công / đổi GVHD</a>
                     <!-- Chờ duyệt: Duyệt hoặc Từ chối (từ chối phải nhập lý do) -->
                     <form th:if="${row.topic.status.name() == 'PENDING'}"
                           th:action="@{/head/topics/{id}/approve(id=${row.topic.id})}" method="post">
@@ -55,7 +60,7 @@
             </tr>
             <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7">Chưa có đề tài nào.</td></tr>
         </tbody>
-    </table>
+    </table></div>
 </div>
 </body>
 </html>

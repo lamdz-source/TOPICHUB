@@ -11,6 +11,7 @@ import vn.edu.demo.topicmanagement.entity.TopicRegistration;
 public interface TopicRegistrationRepository extends JpaRepository<TopicRegistration, Long> {
     Optional<TopicRegistration> findByStudentGroup_Id(Long groupId);
     boolean existsByTopic_Id(Long topicId);
+    List<TopicRegistration> findByTopic_Id(Long topicId);
     List<TopicRegistration> findByStatusOrderByRegisteredAtAsc(RegistrationStatus status);
     List<TopicRegistration> findByStudentGroup_GroupLeader_UsernameOrderByRegisteredAtDesc(String username);
 

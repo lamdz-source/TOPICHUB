@@ -11,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import vn.edu.demo.topicmanagement.dto.HeadSupervisorForm;
+import vn.edu.demo.topicmanagement.dto.HeadSupervisorInfo;
+import vn.edu.demo.topicmanagement.dto.LecturerOption;
 import vn.edu.demo.topicmanagement.dto.TopicForm;
 import vn.edu.demo.topicmanagement.dto.TopicView;
 import vn.edu.demo.topicmanagement.entity.*;
@@ -33,19 +36,31 @@ public class TopicService {
     private final DepartmentRepository departmentRepository;
     private final RegistrationPeriodRepository periodRepository;
     private final TopicRegistrationRepository registrationRepository;
+    private final TopicReviewerRepository reviewerRepository;
+    private final CouncilTopicRepository councilTopicRepository;
+    private final CouncilMemberRepository councilMemberRepository;
+    private final ResultRepository resultRepository;
 
     public TopicService(TopicRepository topicRepository,
                         TopicSupervisorRepository supervisorRepository,
                         UserRepository userRepository,
                         DepartmentRepository departmentRepository,
                         RegistrationPeriodRepository periodRepository,
-                        TopicRegistrationRepository registrationRepository) {
+                        TopicRegistrationRepository registrationRepository,
+                        TopicReviewerRepository reviewerRepository,
+                        CouncilTopicRepository councilTopicRepository,
+                        CouncilMemberRepository councilMemberRepository,
+                        ResultRepository resultRepository) {
         this.topicRepository = topicRepository;
         this.supervisorRepository = supervisorRepository;
         this.userRepository = userRepository;
         this.departmentRepository = departmentRepository;
         this.periodRepository = periodRepository;
         this.registrationRepository = registrationRepository;
+        this.reviewerRepository = reviewerRepository;
+        this.councilTopicRepository = councilTopicRepository;
+        this.councilMemberRepository = councilMemberRepository;
+        this.resultRepository = resultRepository;
     }
 
     // ==================================================================
@@ -189,11 +204,104 @@ public class TopicService {
         if (registrationRepository.existsByTopic_Id(id)) {
             throw new IllegalStateException("Không thể xóa đề tài đã có đăng ký của sinh viên.");
         }
+        requireCreatorIsPrimarySupervisor(topic);
 
         // Xóa liên kết GVHD trước vì database không cascade xóa các bản ghi phụ thuộc.
         supervisorRepository.deleteByTopic(id);
         topicRepository.delete(topic);
         topicRepository.flush();
+    }
+
+    // ==================================================================
+    // TRƯỞNG KHOA: PHÂN CÔNG / THAY ĐỔI GIẢNG VIÊN HƯỚNG DẪN
+    // ==================================================================
+
+    @Transactional(readOnly = true)
+    public List<LecturerOption> getActiveLecturerOptions() {
+        return userRepository.findByRoleAndStatusOrderByFullNameAsc(UserRole.LECTURER, UserStatus.ACTIVE)
+                .stream()
+                .map(u -> new LecturerOption(u.getId(), u.getFullName(), u.getLecturerCode()))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public HeadSupervisorInfo getHeadSupervisorInfo(Long topicId) {
+        Topic topic = getTopic(topicId);
+        List<TopicSupervisor> assigned = supervisorRepository.findByTopicIds(List.of(topicId));
+        Long main = null;
+        Long secondary = null;
+        List<String> names = new ArrayList<>();
+        for (TopicSupervisor entry : assigned) {
+            names.add(entry.getLecturer().getFullName() + (entry.isPrimarySupervisor() ? " (chính)" : " (thứ hai)"));
+            if (entry.isPrimarySupervisor()) main = entry.getLecturer().getId();
+            else secondary = entry.getLecturer().getId();
+        }
+        return new HeadSupervisorInfo(topic.getTitle(), topic.getRegistrationPeriod().getName(),
+                topic.getStatus().getLabel(), String.join(", ", names), main, secondary);
+    }
+
+    /**
+     * Thay danh sách GVHD trong một giao dịch: đúng 1 GVHD chính, tối đa 1 GVHD thứ hai.
+     * Không cho thay đổi khi đã có kết quả hội đồng để tránh sửa lịch sử chấm điểm.
+     * Không cho chỉ định người đang phản biện hoặc thuộc hội đồng chấm đề tài đó.
+     */
+    @Transactional
+    public void updateSupervisorsByHead(Long topicId, HeadSupervisorForm form) {
+        Topic topic = getTopic(topicId);
+        if (topic.getStatus() == TopicStatus.REJECTED) {
+            throw new IllegalStateException("Không phân công GVHD cho đề tài bị từ chối.");
+        }
+        if (form == null || form.getPrimarySupervisorId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn GVHD chính.");
+        }
+        Long primaryId = form.getPrimarySupervisorId();
+        Long secondaryId = form.getCoSupervisorId();
+        if (primaryId.equals(secondaryId)) {
+            throw new IllegalArgumentException("GVHD chính và GVHD thứ hai phải khác nhau.");
+        }
+
+        // Kiểm tra quyền của GIẢNG VIÊN theo ID ở server, không tin giá trị gửi từ trình duyệt.
+        validateActiveLecturer(primaryId);
+        if (secondaryId != null) validateActiveLecturer(secondaryId);
+
+        List<TopicSupervisor> old = supervisorRepository.findByTopicIds(List.of(topicId));
+        if (old.size() == (secondaryId == null ? 1 : 2)
+                && old.stream().anyMatch(ts -> ts.isPrimarySupervisor() && primaryId.equals(ts.getLecturer().getId()))
+                && (secondaryId == null || old.stream()
+                    .anyMatch(ts -> !ts.isPrimarySupervisor() && secondaryId.equals(ts.getLecturer().getId())))) {
+            return; // Không thay đổi: không xóa rồi ghi lại dữ liệu một cách không cần thiết.
+        }
+
+        for (TopicRegistration registration : registrationRepository.findByTopic_Id(topicId)) {
+            if (resultRepository.findByTopicRegistrationId(registration.getId()).isPresent()) {
+                throw new IllegalStateException("Đề tài đã có kết quả hội đồng; không thể thay đổi GVHD.");
+            }
+            for (Long candidateId : secondaryId == null ? List.of(primaryId) : List.of(primaryId, secondaryId)) {
+                if (reviewerRepository.existsByTopicRegistrationIdAndLecturerId(registration.getId(), candidateId)) {
+                    throw new IllegalStateException("GVHD được chọn đang được phân công phản biện đề tài này.");
+                }
+                councilTopicRepository.findByTopicRegistrationId(registration.getId()).ifPresent(ct -> {
+                    if (councilMemberRepository.existsByCouncilIdAndLecturerId(ct.getCouncil().getId(), candidateId)) {
+                        throw new IllegalStateException("GVHD được chọn đang là thành viên hội đồng chấm đề tài này.");
+                    }
+                });
+            }
+        }
+
+        // Thao tác xóa/thêm cùng một transaction: gặp lỗi thì Spring rollback.
+        supervisorRepository.deleteByTopic(topicId);
+        supervisorRepository.save(new TopicSupervisor(topic, userRepository.getReferenceById(primaryId), true));
+        if (secondaryId != null) {
+            supervisorRepository.save(new TopicSupervisor(topic, userRepository.getReferenceById(secondaryId), false));
+        }
+    }
+
+    private void validateActiveLecturer(Long id) {
+        User lecturer = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giảng viên đã chọn."));
+        if (lecturer.getRole() != UserRole.LECTURER || lecturer.getStatus() != UserStatus.ACTIVE) {
+            throw new IllegalArgumentException("Chỉ được phân công giảng viên đang hoạt động.");
+        }
     }
 
     // ==================================================================
@@ -258,7 +366,19 @@ public class TopicService {
         if (t.getStatus() != TopicStatus.PENDING && t.getStatus() != TopicStatus.REJECTED) {
             throw new IllegalStateException("Chỉ sửa được đề tài đang chờ duyệt hoặc bị từ chối.");
         }
+        // Giữ nguyên quyết định phân công của Trưởng khoa: giảng viên tạo đề tài
+        // không được tự đặt mình lại làm GVHD chính sau khi Trưởng khoa đã thay đổi.
+        requireCreatorIsPrimarySupervisor(t);
         return t;
+    }
+
+    private void requireCreatorIsPrimarySupervisor(Topic topic) {
+        boolean creatorIsPrimary = supervisorRepository.findByTopicIds(List.of(topic.getId())).stream()
+                .anyMatch(ts -> ts.isPrimarySupervisor()
+                        && topic.getCreatedBy().getId().equals(ts.getLecturer().getId()));
+        if (!creatorIsPrimary) {
+            throw new IllegalStateException("GVHD chính đã được Trưởng khoa thay đổi; vui lòng liên hệ Trưởng khoa để chỉnh sửa đề tài.");
+        }
     }
 
     private void copyFormToTopic(TopicForm f, Topic t) {
@@ -285,15 +405,21 @@ public class TopicService {
         for (Topic topic : topics) {
             ids.add(topic.getId());
         }
-        Map<Long, String> namesByTopic = supervisorRepository.findByTopicIds(ids).stream()
+        List<TopicSupervisor> supervisorAssignments = supervisorRepository.findByTopicIds(ids);
+        Map<Long, String> namesByTopic = supervisorAssignments.stream()
                 .collect(Collectors.groupingBy(
                         ts -> ts.getTopic().getId(),
                         Collectors.mapping(ts -> ts.getLecturer().getFullName(), Collectors.joining(", "))));
+        Map<Long, Long> primaryByTopic = new LinkedHashMap<>();
+        for (TopicSupervisor ts : supervisorAssignments) {
+            if (ts.isPrimarySupervisor()) primaryByTopic.put(ts.getTopic().getId(), ts.getLecturer().getId());
+        }
 
         List<TopicView> views = new ArrayList<>();
         for (Topic t : topics) {
             boolean editable = username != null
                     && t.getCreatedBy().getUsername().equals(username)
+                    && t.getCreatedBy().getId().equals(primaryByTopic.get(t.getId()))
                     && (t.getStatus() == TopicStatus.PENDING || t.getStatus() == TopicStatus.REJECTED);
             views.add(new TopicView(t, namesByTopic.getOrDefault(t.getId(), ""), editable));
         }

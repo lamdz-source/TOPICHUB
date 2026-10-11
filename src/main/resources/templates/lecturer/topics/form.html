@@ -2,10 +2,12 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${pageTitle}">Đề tài</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-page">
+<div th:replace="~{fragments/nav :: nav}"></div>
 <div class="box formbox">
     <h2 th:text="${pageTitle}">Đăng ký đề tài</h2>
     <a th:href="@{/lecturer/topics}">&larr; Về danh sách</a>
